@@ -46,11 +46,25 @@ class TelegramNotifier(BaseNotifier):
     def is_configured(self) -> bool:
         return bool(self._bot_token and self._chat_id)
 
+    @staticmethod
+    def _to_hashtag(label: str) -> str:
+        import unicodedata
+
+        normalized = unicodedata.normalize("NFKD", label)
+        ascii_only = normalized.encode("ascii", "ignore").decode("ascii")
+        cleaned = re.sub(r"[^A-Za-z0-9]+", "_", ascii_only).strip("_").upper()
+        return f"#{cleaned}" if cleaned else ""
+
     def format_message(self, payload: AlertPayload) -> str:
         if payload.alert_type == AlertType.PRICE_ERROR:
             header = "🚨 *ERROR DE PRECIO / OFERTA EXTREMA* 🚨"
+            level_tag = "#ERROR_DE_PRECIO"
+        elif payload.alert_type == AlertType.STRONG_DEAL:
+            header = "🔥 *OFERTA FUERTE \\(40%\\-69%\\)* 🔥"
+            level_tag = "#OFERTA_FUERTE"
         else:
             header = "📉 *MÍNIMO HISTÓRICO DETECTADO*"
+            level_tag = "#MINIMO_HISTORICO"
 
         store = escape_markdown_v2(payload.retailer_name)
         name = escape_markdown_v2(payload.product_name)
@@ -95,11 +109,17 @@ class TelegramNotifier(BaseNotifier):
         if payload.is_cold_start:
             lines.append(escape_markdown_v2("⚡ Detectado en arranque en frío (primera captura)"))
 
+        tags = [level_tag, self._to_hashtag(payload.retailer_name)]
+        if payload.category:
+            tags.append(self._to_hashtag(payload.category))
+        hashtags_line = " ".join(escape_markdown_v2(t) for t in tags if t)
+
         safe_url = escape_markdown_v2_url(payload.url)
         lines.extend(
             [
                 "",
                 f"🔗 [Ir directo a la oferta]({safe_url})",
+                hashtags_line,
             ]
         )
 

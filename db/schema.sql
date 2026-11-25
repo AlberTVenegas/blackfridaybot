@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS price_history (
 CREATE TABLE IF NOT EXISTS alerts_sent (
     id              BIGSERIAL PRIMARY KEY,
     product_id      BIGINT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
-    alert_type      TEXT NOT NULL CHECK (alert_type IN ('HISTORICAL_LOW', 'PRICE_ERROR')),
+    alert_type      TEXT NOT NULL CHECK (alert_type IN ('HISTORICAL_LOW', 'STRONG_DEAL', 'PRICE_ERROR')),
     price_triggered INTEGER NOT NULL,
     twilio_called   BOOLEAN NOT NULL DEFAULT FALSE,
     sent_at         TIMESTAMPTZ NOT NULL DEFAULT NOW()

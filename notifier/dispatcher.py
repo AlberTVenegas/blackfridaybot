@@ -37,7 +37,7 @@ class AlertDispatcher:
     ) -> DispatchResult:
         result = DispatchResult()
 
-        if payload.alert_type == AlertType.HISTORICAL_LOW:
+        if payload.alert_type != AlertType.PRICE_ERROR:
             try:
                 result.telegram_sent = await self.telegram.send(payload)
             except Exception as exc:

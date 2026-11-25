@@ -33,6 +33,12 @@ class Settings(BaseSettings):
         le=Decimal("99.99"),
         description="Percentage drop (>=) that classifies an offer as PRICE_ERROR.",
     )
+    strong_deal_threshold: Decimal = Field(
+        default=Decimal(40),
+        ge=Decimal(1),
+        le=Decimal("99.0"),
+        description="Percentage drop (>= and < extreme) that classifies an offer as STRONG_DEAL.",
+    )
     historical_low_min_drop: Decimal = Field(
         default=Decimal(10),
         ge=Decimal("0.1"),

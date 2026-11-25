@@ -34,6 +34,7 @@ def build_components(
     db = DatabaseManager(settings)
     detector = PriceAnomalyDetector(
         extreme_discount_threshold=settings.extreme_discount_threshold,
+        strong_deal_threshold=settings.strong_deal_threshold,
         historical_low_min_drop=settings.historical_low_min_drop,
         cooldown_hours=settings.alert_cooldown_hours,
         cold_start_absurd_price_clp=settings.cold_start_absurd_price_clp,

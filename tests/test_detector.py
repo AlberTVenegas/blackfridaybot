@@ -40,10 +40,10 @@ class TestSteadyStateDetection:
         assert decision.effective_discount_pct == Decimal("20.00")
         assert decision.min_30d == 92_000
 
-    def test_historical_low_upper_boundary_69_9_percent(
+    def test_strong_deal_upper_boundary_69_9_percent(
         self, detector: PriceAnomalyDetector, base_now: datetime
     ) -> None:
-        # Median = 100.000, current = 30.100 -> 69.90% drop -> HISTORICAL_LOW (not PRICE_ERROR)
+        # Median = 100.000, current = 30.100 -> 69.90% drop -> STRONG_DEAL (not PRICE_ERROR)
         obs = PriceObservation(current_price=30_100, in_stock=True)
         decision = detector.evaluate(
             obs,
@@ -51,8 +51,22 @@ class TestSteadyStateDetection:
             previous_price=100_000,
             now=base_now,
         )
-        assert decision.alert_type == AlertType.HISTORICAL_LOW
+        assert decision.alert_type == AlertType.STRONG_DEAL
         assert decision.effective_discount_pct == Decimal("69.90")
+
+    def test_strong_deal_exact_40_percent_boundary(
+        self, detector: PriceAnomalyDetector, base_now: datetime
+    ) -> None:
+        # Median = 100.000, current = 60.000 -> 40.00% drop -> STRONG_DEAL
+        obs = PriceObservation(current_price=60_000, in_stock=True)
+        decision = detector.evaluate(
+            obs,
+            history_30d=[100_000, 100_000, 95_000],
+            previous_price=100_000,
+            now=base_now,
+        )
+        assert decision.alert_type == AlertType.STRONG_DEAL
+        assert decision.effective_discount_pct == Decimal("40.00")
 
     def test_equal_to_previous_min_does_not_alert_historical_low(
         self, detector: PriceAnomalyDetector, base_now: datetime

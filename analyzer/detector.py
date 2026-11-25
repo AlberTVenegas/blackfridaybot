@@ -60,11 +60,13 @@ class PriceAnomalyDetector:
         self,
         *,
         extreme_discount_threshold: Decimal = Decimal(70),
+        strong_deal_threshold: Decimal = Decimal(40),
         historical_low_min_drop: Decimal = Decimal(10),
         cooldown_hours: int = 6,
         cold_start_absurd_price_clp: int = 1000,
     ) -> None:
         self.extreme_discount_threshold = Decimal(str(extreme_discount_threshold))
+        self.strong_deal_threshold = Decimal(str(strong_deal_threshold))
         self.historical_low_min_drop = Decimal(str(historical_low_min_drop))
         self.cooldown_hours = cooldown_hours
         self.cold_start_absurd_price_clp = cold_start_absurd_price_clp
@@ -197,12 +199,23 @@ class PriceAnomalyDetector:
             reason = "previous_price_extreme_drop"
             reference_price = valid_previous
             effective_discount = drop_vs_previous_pct
-        # Priority 2: HISTORICAL_LOW (strictly below 30d min, 10% <= drop < 70% vs 30d median)
+        # Priority 2: STRONG_DEAL (strictly below 30d min, strong_deal_threshold <= drop < extreme)
         elif (
             min_30d is not None
             and current_price < min_30d
             and drop_vs_median_pct is not None
-            and self.historical_low_min_drop <= drop_vs_median_pct < self.extreme_discount_threshold
+            and self.strong_deal_threshold <= drop_vs_median_pct < self.extreme_discount_threshold
+        ):
+            candidate = AlertType.STRONG_DEAL
+            reason = "strong_deal"
+            reference_price = int(median_30d) if median_30d is not None else min_30d
+            effective_discount = drop_vs_median_pct
+        # Priority 3: HISTORICAL_LOW (strictly below 30d min, 10% <= drop < 40% vs 30d median)
+        elif (
+            min_30d is not None
+            and current_price < min_30d
+            and drop_vs_median_pct is not None
+            and self.historical_low_min_drop <= drop_vs_median_pct < self.strong_deal_threshold
         ):
             candidate = AlertType.HISTORICAL_LOW
             reason = "historical_low"
@@ -264,6 +277,12 @@ class PriceAnomalyDetector:
             )
 
         if self.cooldown_hours > 0 and recent_alerts:
+            severity_rank = {
+                AlertType.HISTORICAL_LOW.value: 1,
+                AlertType.STRONG_DEAL.value: 2,
+                AlertType.PRICE_ERROR.value: 3,
+            }
+            candidate_rank = severity_rank.get(candidate.value, 1)
             reference_now = now or datetime.now(UTC)
             cutoff = reference_now - timedelta(hours=self.cooldown_hours)
             for alert in recent_alerts:
@@ -276,10 +295,7 @@ class PriceAnomalyDetector:
                     )
 
                 same_price = alert.price_triggered == current_price
-                same_or_higher_severity = (
-                    alert.alert_type == candidate.value
-                    or alert.alert_type == AlertType.PRICE_ERROR.value
-                )
+                same_or_higher_severity = severity_rank.get(alert.alert_type, 0) >= candidate_rank
                 if alert_sent_at >= cutoff and same_price and same_or_higher_severity:
                     return AnomalyDecision(
                         alert_type=None,

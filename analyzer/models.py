@@ -8,6 +8,7 @@ from enum import Enum
 
 class AlertType(str, Enum):
     HISTORICAL_LOW = "HISTORICAL_LOW"
+    STRONG_DEAL = "STRONG_DEAL"
     PRICE_ERROR = "PRICE_ERROR"
 
 

@@ -104,7 +104,7 @@ class AlertSent(Base):
     __tablename__ = "alerts_sent"
     __table_args__ = (
         CheckConstraint(
-            "alert_type IN ('HISTORICAL_LOW', 'PRICE_ERROR')",
+            "alert_type IN ('HISTORICAL_LOW', 'STRONG_DEAL', 'PRICE_ERROR')",
             name="ck_alerts_sent_type",
         ),
         Index(
