@@ -6,7 +6,7 @@ from datetime import UTC, datetime, timedelta
 
 import httpx
 
-from notifier.base import AlertNotifier, AlertPayload, format_clp
+from notifier.base import AlertPayload, BaseNotifier, format_clp
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +14,7 @@ CALLMEBOT_API_URL = "https://api.callmebot.com/start.php"
 MAX_TTS_LENGTH = 256
 
 
-class CallMeBotVoiceNotifier(AlertNotifier):
+class CallMeBotVoiceNotifier(BaseNotifier):
     """Free Telegram voice-call notifier via CallMeBot API (HTTP GET).
 
     Mirrors TwilioVoiceNotifier's interface (`seed_last_call_at`, `send_with_status`,
