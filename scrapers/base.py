@@ -4,6 +4,7 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any, Self
 
+from curl_cffi import CurlOpt
 from curl_cffi.requests import AsyncSession
 from tenacity import (
     AsyncRetrying,
@@ -87,6 +88,7 @@ class BaseScraper(ABC):
             self._http_session = AsyncSession(
                 impersonate="chrome",
                 timeout=self.settings.http_timeout_seconds,
+                curl_options={CurlOpt.IPRESOLVE: 1},
             )
 
         async for attempt in AsyncRetrying(

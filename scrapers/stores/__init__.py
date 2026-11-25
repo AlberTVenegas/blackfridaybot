@@ -1,13 +1,13 @@
 from scrapers.stores.falabella import FalabellaScraper
 from scrapers.stores.paris import ParisScraper
+from scrapers.stores.samsung import SamsungScraper
 from scrapers.stores.stubs import (
     AdidasScraper,
     DecathlonScraper,
     NikeScraper,
     RipleyScraper,
-    SamsungScraper,
-    XiaomiScraper,
 )
+from scrapers.stores.xiaomi import XiaomiScraper
 
 __all__ = [
     "AdidasScraper",

@@ -40,22 +40,6 @@ class RipleyScraper(_Phase2StubScraper):
     base_url = "https://simple.ripley.cl"
 
 
-class SamsungScraper(_Phase2StubScraper):
-    """Target: Samsung Chile — Hybris / catalog JSON APIs + Playwright fallback."""
-
-    retailer_name = "Samsung"
-    retailer_slug = "samsung"
-    base_url = "https://www.samsung.com/cl"
-
-
-class XiaomiScraper(_Phase2StubScraper):
-    """Target: Xiaomi Chile (mi.com/cl) — VTEX/JSON catalog endpoints."""
-
-    retailer_name = "Xiaomi"
-    retailer_slug = "xiaomi"
-    base_url = "https://www.mi.com/cl"
-
-
 class NikeScraper(_Phase2StubScraper):
     """Target: Nike Chile — VTEX Intelligent Search API (`/api/io/_v/api/intelligent-search`)."""
 

@@ -65,12 +65,31 @@ stores:
     categories: []
     watchlist: []
   samsung:
-    enabled: false
-    categories: []
+    enabled: true
+    categories:
+      - name: "Smartphones"
+        url: "https://www.samsung.com/cl/smartphones/all-smartphones/"
+        max_pages: 1
+      - name: "Tablets"
+        url: "https://www.samsung.com/cl/tablets/all-tablets/"
+        max_pages: 1
+      - name: "Televisores"
+        url: "https://www.samsung.com/cl/tvs/all-tvs/"
+        max_pages: 1
     watchlist: []
+
   xiaomi:
-    enabled: false
-    categories: []
+    enabled: true
+    categories:
+      - name: "Smartphones"
+        url: "https://www.mi.com/cl/product-list/phone"
+        max_pages: 1
+      - name: "Tablets"
+        url: "https://www.mi.com/cl/product-list/tablets"
+        max_pages: 1
+      - name: "TV y Electrodomésticos"
+        url: "https://www.mi.com/cl/product-list/tvs-ha"
+        max_pages: 1
     watchlist: []
   nike:
     enabled: false
