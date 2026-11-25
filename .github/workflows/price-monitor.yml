@@ -16,10 +16,10 @@ on:
       twilio_enabled:
         description: "Habilitar llamadas Twilio en esta ejecución"
         type: choice
-        default: "true"
+        default: "false"
         options:
-          - "true"
           - "false"
+          - "true"
 
 permissions:
   contents: read
@@ -80,7 +80,7 @@ jobs:
           COLD_START_ABSURD_PRICE_CLP: "1000"
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          TWILIO_ENABLED: ${{ inputs.twilio_enabled || vars.TWILIO_ENABLED || 'true' }}
+          TWILIO_ENABLED: ${{ inputs.twilio_enabled || vars.TWILIO_ENABLED || 'false' }}
           TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
           TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
           TWILIO_FROM_NUMBER: ${{ secrets.TWILIO_FROM_NUMBER }}
