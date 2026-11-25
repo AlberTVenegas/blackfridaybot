@@ -118,6 +118,7 @@ class MonitoringPipeline:
         self.detector = detector
         self.dispatcher = dispatcher
         self._semaphore = asyncio.Semaphore(settings.max_concurrent_requests)
+        self._db_semaphore = asyncio.Semaphore(max(2, min(8, settings.db_pool_size + 3)))
 
     async def hydrate_global_rate_limits(self) -> None:
         """Seed Twilio's in-memory global cooldown from Supabase on startup."""
@@ -292,21 +293,28 @@ class MonitoringPipeline:
                                 category_name=cat.name,
                                 max_pages=cat.max_pages,
                             )
-                        for scraped in products:
+                        async def _process_one(
+                            scraped: ScrapedProduct,
+                            slug: str = store_cfg.slug,
+                            base_url: str = scraper.base_url,
+                        ) -> None:
                             stats.products_scraped += 1
-                            try:
-                                await self.process_scraped_product(
-                                    scraped,
-                                    retailer_base_url=scraper.base_url,
-                                    stats=stats,
-                                )
-                            except Exception:
-                                stats.errors += 1
-                                logger.exception(
-                                    "[%s] Failed processing SKU %s",
-                                    store_cfg.slug,
-                                    scraped.sku,
-                                )
+                            async with self._db_semaphore:
+                                try:
+                                    await self.process_scraped_product(
+                                        scraped,
+                                        retailer_base_url=base_url,
+                                        stats=stats,
+                                    )
+                                except Exception:
+                                    stats.errors += 1
+                                    logger.exception(
+                                        "[%s] Failed processing SKU %s",
+                                        slug,
+                                        scraped.sku,
+                                    )
+
+                        await asyncio.gather(*(_process_one(p) for p in products))
                     except Exception:
                         stats.errors += 1
                         logger.exception(

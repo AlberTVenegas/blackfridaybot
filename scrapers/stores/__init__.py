@@ -1,9 +1,9 @@
 from scrapers.stores.falabella import FalabellaScraper
+from scrapers.stores.paris import ParisScraper
 from scrapers.stores.stubs import (
     AdidasScraper,
     DecathlonScraper,
     NikeScraper,
-    ParisScraper,
     RipleyScraper,
     SamsungScraper,
     XiaomiScraper,

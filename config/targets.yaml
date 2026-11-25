@@ -5,27 +5,61 @@ stores:
   falabella:
     enabled: true
     categories:
-      - name: "Notebooks"
-        url: "https://www.falabella.com/falabella-cl/category/cat70057/Notebooks"
-        max_pages: 2
+      # Tecnología (incluye Samsung, Xiaomi, Apple, etc.)
       - name: "Smartphones"
         url: "https://www.falabella.com/falabella-cl/category/cat720161/Smartphones"
         max_pages: 2
+      - name: "Tablets"
+        url: "https://www.falabella.com/falabella-cl/category/cat7230007/Tablets"
+        max_pages: 2
+      - name: "Televisores"
+        url: "https://www.falabella.com/falabella-cl/category/cat1012/TV-y-Video"
+        max_pages: 2
+      - name: "Notebooks"
+        url: "https://www.falabella.com/falabella-cl/category/cat70057/Notebooks"
+        max_pages: 2
+      # Calzado deportivo (incluye Nike, Adidas, etc.)
       - name: "Zapatillas"
         url: "https://www.falabella.com/falabella-cl/category/cat2018/Zapatillas"
         max_pages: 2
+      # Moda y Hogar
+      - name: "Moda (Chaquetas y Parkas)"
+        url: "https://www.falabella.com/falabella-cl/category/cat2019/Parkas-y-Chaquetas-Hombre"
+        max_pages: 1
+      - name: "Hogar y Muebles"
+        url: "https://www.falabella.com/falabella-cl/category/cat2023/Muebles"
+        max_pages: 1
     watchlist:
       # Agrega aquí URLs exactas de productos prioritarios (se revisan cada WATCHLIST_INTERVAL_MINUTES)
-      # - name: "MacBook Air M3"
-      #   category: "Notebooks"
-      #   url: "https://www.falabella.com/falabella-cl/product/12345678/..."
       []
 
-  # Fase 2: habilitar a medida que se implementen los scrapers específicos
   paris:
-    enabled: false
-    categories: []
+    enabled: true
+    categories:
+      # Tecnología (incluye Samsung, Xiaomi, Apple, etc.)
+      - name: "Smartphones"
+        url: "https://www.paris.cl/tecnologia/celulares/smartphone/"
+        max_pages: 2
+      - name: "Tablets"
+        url: "https://www.paris.cl/tecnologia/computadores/tablets/"
+        max_pages: 1
+      - name: "Televisores"
+        url: "https://www.paris.cl/electro/television/"
+        max_pages: 2
+      # Calzado deportivo (incluye Nike, Adidas, etc.)
+      - name: "Zapatillas"
+        url: "https://www.paris.cl/deportes/zapatillas/"
+        max_pages: 2
+      # Moda y Hogar
+      - name: "Moda"
+        url: "https://www.paris.cl/hombre/moda/"
+        max_pages: 1
+      - name: "Hogar y Muebles"
+        url: "https://www.paris.cl/muebles/"
+        max_pages: 1
     watchlist: []
+
+  # Fase 2: habilitar a medida que se implementen los scrapers específicos
   ripley:
     enabled: false
     categories: []

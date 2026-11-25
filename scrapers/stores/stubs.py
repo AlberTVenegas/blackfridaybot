@@ -32,14 +32,6 @@ class _Phase2StubScraper(BaseScraper):
         )
 
 
-class ParisScraper(_Phase2StubScraper):
-    """Target: Paris Chile (Cencosud) — SFCC/GraphQL & Tarjeta Cencosud vs Todo medio."""
-
-    retailer_name = "Paris"
-    retailer_slug = "paris"
-    base_url = "https://www.paris.cl"
-
-
 class RipleyScraper(_Phase2StubScraper):
     """Target: Ripley Chile — BFF JSON endpoints + Tarjeta Ripley vs Todo medio."""
 
