@@ -1,0 +1,104 @@
+name: Black Friday Price Monitor
+
+on:
+  schedule:
+    # Ejecuta un ciclo completo cada 10 minutos (los cron de GitHub Actions pueden variar unos minutos)
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Modo de ejecución"
+        type: choice
+        default: "once"
+        options:
+          - once
+          - test-alert
+      twilio_enabled:
+        description: "Habilitar llamadas Twilio en esta ejecución"
+        type: choice
+        default: "true"
+        options:
+          - "true"
+          - "false"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: price-monitor
+  cancel-in-progress: false
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: "requirements.txt"
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Get installed Playwright version
+        id: playwright-version
+        run: |
+          echo "version=$(python -c 'import importlib.metadata as m; print(m.version("playwright"))')" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright Chromium browser
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
+
+      - name: Install Playwright Chromium
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: playwright install chromium
+
+      - name: Install Chromium system dependencies
+        run: playwright install-deps chromium
+
+      - name: Run Price Hunter Bot
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DB_POOL_SIZE: "5"
+          DB_MAX_OVERFLOW: "10"
+          EXTREME_DISCOUNT_THRESHOLD: "70"
+          HISTORICAL_LOW_MIN_DROP: "10"
+          HISTORY_WINDOW_DAYS: "30"
+          ALERT_COOLDOWN_HOURS: "6"
+          COLD_START_ABSURD_PRICE_CLP: "1000"
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TWILIO_ENABLED: ${{ inputs.twilio_enabled || vars.TWILIO_ENABLED || 'true' }}
+          TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
+          TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
+          TWILIO_FROM_NUMBER: ${{ secrets.TWILIO_FROM_NUMBER }}
+          TWILIO_TO_NUMBER: ${{ secrets.TWILIO_TO_NUMBER }}
+          TWILIO_VOICE_NAME: "Polly.Mia"
+          TWILIO_VOICE_LANGUAGE: "es-MX"
+          TWILIO_GLOBAL_COOLDOWN_SECONDS: "180"
+          PROXY_URLS: ${{ secrets.PROXY_URLS }}
+          MAX_CONCURRENT_REQUESTS: "4"
+          REQUEST_MIN_DELAY_SEC: "1.0"
+          REQUEST_MAX_DELAY_SEC: "3.0"
+          HTTP_TIMEOUT_SECONDS: "25"
+          PLAYWRIGHT_FALLBACK_ENABLED: "true"
+          INCLUDE_STORE_CARD_PRICES: "true"
+          LOG_LEVEL: "INFO"
+        run: |
+          if [ "${{ inputs.mode }}" = "test-alert" ]; then
+            python main.py --test-alert
+          else
+            python main.py --once
+          fi
