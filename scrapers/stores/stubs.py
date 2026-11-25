@@ -62,3 +62,19 @@ class DecathlonScraper(_Phase2StubScraper):
     retailer_name = "Decathlon"
     retailer_slug = "decathlon"
     base_url = "https://www.decathlon.cl"
+
+
+class MercadoLibreScraper(_Phase2StubScraper):
+    """Target: Mercado Libre Chile — API oficial con OAuth / anti-bot."""
+
+    retailer_name = "Mercado Libre"
+    retailer_slug = "mercadolibre"
+    base_url = "https://www.mercadolibre.cl"
+
+
+class LiderScraper(_Phase2StubScraper):
+    """Target: Líder Chile (Walmart) — protegido por Cloudflare / geo-fencing."""
+
+    retailer_name = "Líder"
+    retailer_slug = "lider"
+    base_url = "https://www.lider.cl"

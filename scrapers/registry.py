@@ -6,10 +6,13 @@ from scrapers.stores import (
     AdidasScraper,
     DecathlonScraper,
     FalabellaScraper,
+    LiderScraper,
+    MercadoLibreScraper,
     NikeScraper,
     ParisScraper,
     RipleyScraper,
     SamsungScraper,
+    SodimacScraper,
     XiaomiScraper,
 )
 
@@ -22,6 +25,9 @@ SCRAPER_REGISTRY: dict[str, type[BaseScraper]] = {
     "nike": NikeScraper,
     "adidas": AdidasScraper,
     "decathlon": DecathlonScraper,
+    "sodimac": SodimacScraper,
+    "mercadolibre": MercadoLibreScraper,
+    "lider": LiderScraper,
 }
 
 

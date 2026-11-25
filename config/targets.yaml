@@ -103,3 +103,27 @@ stores:
     enabled: false
     categories: []
     watchlist: []
+  sodimac:
+    enabled: true
+    categories:
+      - name: "Herramientas y Maquinarias"
+        url: "https://www.sodimac.cl/sodimac-cl/lista/CATG10734/Maquinarias-y-Herramientas-Constructor"
+        max_pages: 1
+      - name: "Refrigeración"
+        url: "https://www.sodimac.cl/sodimac-cl/lista/CATG19018/Refrigeracion"
+        max_pages: 1
+      - name: "Lavado y Planchado"
+        url: "https://www.sodimac.cl/sodimac-cl/lista/CATG10275/Lavado-y-planchado"
+        max_pages: 1
+      - name: "Muebles y Hogar"
+        url: "https://www.sodimac.cl/sodimac-cl/lista/CATG10014/Muebles-de-Cocina"
+        max_pages: 1
+    watchlist: []
+  mercadolibre:
+    enabled: false
+    categories: []
+    watchlist: []
+  lider:
+    enabled: false
+    categories: []
+    watchlist: []
