@@ -161,11 +161,23 @@ class PriceAnomalyDetector:
 
         # 3. Steady-state evaluation with historical data
         median_30d = _compute_decimal_median(valid_history) if valid_history else None
+        avg_30d = (
+            (sum((Decimal(p) for p in valid_history), Decimal(0)) / Decimal(len(valid_history)))
+            .quantize(Decimal("1"), rounding=ROUND_HALF_UP)
+            if valid_history
+            else None
+        )
         min_30d = min(valid_history) if valid_history else None
+        history_samples = len(valid_history)
 
         drop_vs_median_pct = (
             _compute_drop_pct(median_30d, current_price)
             if median_30d is not None and median_30d > 0
+            else None
+        )
+        drop_vs_avg_pct = (
+            _compute_drop_pct(avg_30d, current_price)
+            if avg_30d is not None and avg_30d > 0
             else None
         )
         drop_vs_previous_pct = (
@@ -228,10 +240,13 @@ class PriceAnomalyDetector:
             current_price=current_price,
             reference_price=reference_price,
             median_30d=median_30d,
+            avg_30d=avg_30d,
             min_30d=min_30d,
+            history_samples=history_samples,
             previous_price=valid_previous,
             normal_price=normal_price,
             drop_vs_median_pct=drop_vs_median_pct,
+            drop_vs_avg_pct=drop_vs_avg_pct,
             drop_vs_previous_pct=drop_vs_previous_pct,
             drop_vs_normal_pct=drop_vs_normal_pct,
             effective_discount_pct=effective_discount,
@@ -258,6 +273,9 @@ class PriceAnomalyDetector:
         is_cold_start: bool,
         recent_alerts: Sequence[AlertHistoryEntry],
         now: datetime | None,
+        avg_30d: Decimal | None = None,
+        drop_vs_avg_pct: Decimal | None = None,
+        history_samples: int = 0,
     ) -> AnomalyDecision:
         if candidate is None:
             return AnomalyDecision(
@@ -266,10 +284,13 @@ class PriceAnomalyDetector:
                 current_price=current_price,
                 reference_price=reference_price,
                 median_30d=median_30d,
+                avg_30d=avg_30d,
                 min_30d=min_30d,
+                history_samples=history_samples,
                 previous_price=previous_price,
                 normal_price=normal_price,
                 drop_vs_median_pct=_round_pct(drop_vs_median_pct),
+                drop_vs_avg_pct=_round_pct(drop_vs_avg_pct),
                 drop_vs_previous_pct=_round_pct(drop_vs_previous_pct),
                 drop_vs_normal_pct=_round_pct(drop_vs_normal_pct),
                 effective_discount_pct=_round_pct(effective_discount_pct),
@@ -303,10 +324,13 @@ class PriceAnomalyDetector:
                         current_price=current_price,
                         reference_price=reference_price,
                         median_30d=median_30d,
+                        avg_30d=avg_30d,
                         min_30d=min_30d,
+                        history_samples=history_samples,
                         previous_price=previous_price,
                         normal_price=normal_price,
                         drop_vs_median_pct=_round_pct(drop_vs_median_pct),
+                        drop_vs_avg_pct=_round_pct(drop_vs_avg_pct),
                         drop_vs_previous_pct=_round_pct(drop_vs_previous_pct),
                         drop_vs_normal_pct=_round_pct(drop_vs_normal_pct),
                         effective_discount_pct=_round_pct(effective_discount_pct),
@@ -321,10 +345,13 @@ class PriceAnomalyDetector:
             current_price=current_price,
             reference_price=reference_price,
             median_30d=median_30d,
+            avg_30d=avg_30d,
             min_30d=min_30d,
+            history_samples=history_samples,
             previous_price=previous_price,
             normal_price=normal_price,
             drop_vs_median_pct=_round_pct(drop_vs_median_pct),
+            drop_vs_avg_pct=_round_pct(drop_vs_avg_pct),
             drop_vs_previous_pct=_round_pct(drop_vs_previous_pct),
             drop_vs_normal_pct=_round_pct(drop_vs_normal_pct),
             effective_discount_pct=_round_pct(effective_discount_pct),

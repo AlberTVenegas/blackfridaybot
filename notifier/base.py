@@ -29,6 +29,10 @@ class AlertPayload:
     payment_method: PaymentMethodType = PaymentMethodType.ALL_PAYMENT_METHODS
     payment_method_label: str = "Todo medio de pago"
     all_payment_price_clp: int | None = None
+    avg_30d_price: int | None = None
+    min_30d_price: int | None = None
+    drop_vs_avg_pct: Decimal | None = None
+    history_samples: int = 0
     is_cold_start: bool = False
     reason: str = ""
 

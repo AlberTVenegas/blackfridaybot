@@ -91,6 +91,20 @@ class TelegramNotifier(BaseNotifier):
             pct_str = escape_markdown_v2(f"{payload.discount_pct:.1f}%")
             lines.append(f"🔥 *Descuento:* *{pct_str}*")
 
+        if payload.avg_30d_price is not None and payload.history_samples > 0:
+            avg_str = escape_markdown_v2(f"{format_clp(payload.avg_30d_price)} CLP")
+            if payload.drop_vs_avg_pct is not None and payload.drop_vs_avg_pct >= 0:
+                detail = f"(-{payload.drop_vs_avg_pct:.1f}% bajo promedio · {payload.history_samples} capturas)"
+            elif payload.drop_vs_avg_pct is not None:
+                detail = f"(+{abs(payload.drop_vs_avg_pct):.1f}% sobre promedio · {payload.history_samples} capturas)"
+            else:
+                detail = f"({payload.history_samples} capturas)"
+            lines.append(f"📈 *Promedio histórico 30d:* {avg_str} {escape_markdown_v2(detail)}")
+
+        if payload.min_30d_price is not None and payload.history_samples > 0:
+            min_str = escape_markdown_v2(f"{format_clp(payload.min_30d_price)} CLP")
+            lines.append(f"⬇️ *Mínimo previo 30d:* {min_str}")
+
         # Payment method clarity (Store card vs All payment methods)
         payment_icon = (
             "💳" if payload.payment_method == PaymentMethodType.STORE_CARD else "✅"

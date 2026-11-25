@@ -219,6 +219,10 @@ class MonitoringPipeline:
                 payment_method=scraped.payment_method,
                 payment_method_label=scraped.payment_method_label,
                 all_payment_price_clp=scraped.all_payment_price_clp,
+                avg_30d_price=int(decision.avg_30d) if decision.avg_30d is not None else None,
+                min_30d_price=decision.min_30d,
+                drop_vs_avg_pct=decision.drop_vs_avg_pct,
+                history_samples=decision.history_samples,
                 is_cold_start=decision.is_cold_start,
                 reason=decision.reason,
             )

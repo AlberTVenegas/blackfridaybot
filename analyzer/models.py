@@ -47,10 +47,13 @@ class AnomalyDecision:
     current_price: int | None
     reference_price: int | None = None
     median_30d: Decimal | None = None
+    avg_30d: Decimal | None = None
     min_30d: int | None = None
+    history_samples: int = 0
     previous_price: int | None = None
     normal_price: int | None = None
     drop_vs_median_pct: Decimal | None = None
+    drop_vs_avg_pct: Decimal | None = None
     drop_vs_previous_pct: Decimal | None = None
     drop_vs_normal_pct: Decimal | None = None
     effective_discount_pct: Decimal | None = None
