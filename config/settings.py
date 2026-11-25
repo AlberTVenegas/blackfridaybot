@@ -71,6 +71,13 @@ class Settings(BaseSettings):
         ),
     )
 
+    # CallMeBot (free Telegram voice calls alternative to Twilio)
+    callmebot_enabled: bool = Field(default=False)
+    callmebot_telegram_user: str = Field(default="")
+    callmebot_lang: str = Field(default="es-US-Standard-A")
+    callmebot_repeat: int = Field(default=2, ge=1, le=5)
+    callmebot_global_cooldown_seconds: int = Field(default=180, ge=65)
+
     # Scraping & anti-blocking
     proxy_urls: str = Field(
         default="",
@@ -121,6 +128,10 @@ class Settings(BaseSettings):
             and self.twilio_from_number.strip()
             and self.twilio_to_number.strip()
         )
+
+    @property
+    def callmebot_configured(self) -> bool:
+        return bool(self.callmebot_enabled and self.callmebot_telegram_user.strip())
 
 
 @lru_cache(maxsize=1)

@@ -11,6 +11,7 @@ from analyzer.models import AlertType, PaymentMethodType
 from config.settings import Settings, get_settings
 from db.session import DatabaseManager
 from notifier.base import AlertPayload
+from notifier.callmebot_voice import CallMeBotVoiceNotifier
 from notifier.dispatcher import AlertDispatcher
 from notifier.telegram import TelegramNotifier
 from notifier.twilio_voice import TwilioVoiceNotifier
@@ -41,17 +42,38 @@ def build_components(
         bot_token=settings.telegram_bot_token,
         chat_id=settings.telegram_chat_id,
     )
-    twilio = TwilioVoiceNotifier(
-        account_sid=settings.twilio_account_sid,
-        auth_token=settings.twilio_auth_token,
-        from_number=settings.twilio_from_number,
-        to_number=settings.twilio_to_number,
-        voice_name=settings.twilio_voice_name,
-        language=settings.twilio_voice_language,
-        global_cooldown_seconds=settings.twilio_global_cooldown_seconds,
-        enabled=settings.twilio_enabled,
-    )
-    dispatcher = AlertDispatcher(telegram=telegram, twilio=twilio)
+    voice_notifier: TwilioVoiceNotifier | CallMeBotVoiceNotifier
+    if settings.twilio_configured:
+        voice_notifier = TwilioVoiceNotifier(
+            account_sid=settings.twilio_account_sid,
+            auth_token=settings.twilio_auth_token,
+            from_number=settings.twilio_from_number,
+            to_number=settings.twilio_to_number,
+            voice_name=settings.twilio_voice_name,
+            language=settings.twilio_voice_language,
+            global_cooldown_seconds=settings.twilio_global_cooldown_seconds,
+            enabled=settings.twilio_enabled,
+        )
+    elif settings.callmebot_configured:
+        voice_notifier = CallMeBotVoiceNotifier(
+            telegram_user=settings.callmebot_telegram_user,
+            lang=settings.callmebot_lang,
+            repeat=settings.callmebot_repeat,
+            global_cooldown_seconds=settings.callmebot_global_cooldown_seconds,
+            enabled=settings.callmebot_enabled,
+        )
+    else:
+        voice_notifier = TwilioVoiceNotifier(
+            account_sid=settings.twilio_account_sid,
+            auth_token=settings.twilio_auth_token,
+            from_number=settings.twilio_from_number,
+            to_number=settings.twilio_to_number,
+            voice_name=settings.twilio_voice_name,
+            language=settings.twilio_voice_language,
+            global_cooldown_seconds=settings.twilio_global_cooldown_seconds,
+            enabled=False,
+        )
+    dispatcher = AlertDispatcher(telegram=telegram, twilio=voice_notifier)
     return db, detector, dispatcher
 
 
