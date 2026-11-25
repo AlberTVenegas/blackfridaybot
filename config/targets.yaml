@@ -1,0 +1,52 @@
+# Configuración híbrida de monitoreo (Categorías de descubrimiento + Watchlist de URLs)
+# Edita este archivo para agregar tus categorías y productos objetivo de Black Friday.
+
+stores:
+  falabella:
+    enabled: true
+    categories:
+      - name: "Notebooks"
+        url: "https://www.falabella.com/falabella-cl/category/cat70057/Notebooks"
+        max_pages: 2
+      - name: "Smartphones"
+        url: "https://www.falabella.com/falabella-cl/category/cat720161/Smartphones"
+        max_pages: 2
+      - name: "Zapatillas"
+        url: "https://www.falabella.com/falabella-cl/category/cat2018/Zapatillas"
+        max_pages: 2
+    watchlist:
+      # Agrega aquí URLs exactas de productos prioritarios (se revisan cada WATCHLIST_INTERVAL_MINUTES)
+      # - name: "MacBook Air M3"
+      #   category: "Notebooks"
+      #   url: "https://www.falabella.com/falabella-cl/product/12345678/..."
+      []
+
+  # Fase 2: habilitar a medida que se implementen los scrapers específicos
+  paris:
+    enabled: false
+    categories: []
+    watchlist: []
+  ripley:
+    enabled: false
+    categories: []
+    watchlist: []
+  samsung:
+    enabled: false
+    categories: []
+    watchlist: []
+  xiaomi:
+    enabled: false
+    categories: []
+    watchlist: []
+  nike:
+    enabled: false
+    categories: []
+    watchlist: []
+  adidas:
+    enabled: false
+    categories: []
+    watchlist: []
+  decathlon:
+    enabled: false
+    categories: []
+    watchlist: []
