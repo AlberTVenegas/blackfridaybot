@@ -11,11 +11,14 @@ Uso:
 from __future__ import annotations
 
 import logging
+from datetime import UTC, datetime
 
 import modal
 
 APP_NAME = "bf-price-hunter"
 SECRET_NAME = "bf-price-hunter"
+# 27 nov 2026 00:00 hora Chile (UTC-3) = 27 nov 2026 03:00 UTC
+BLACK_FRIDAY_FAST_MODE_UTC = datetime(2026, 11, 27, 3, 0, tzinfo=UTC)
 
 app = modal.App(APP_NAME)
 
@@ -46,17 +49,21 @@ image = (
 @app.function(
     image=image,
     secrets=[modal.Secret.from_name(SECRET_NAME)],
-    schedule=modal.Period(minutes=10),
+    schedule=modal.Cron("*/5 * * * *"),
     timeout=540,
     max_containers=1,
     cpu=0.5,
     memory=1024,
 )
-async def run_monitor_cycle() -> None:
-    """Ejecuta un ciclo completo (watchlist + categorías) cada 10 minutos."""
+async def run_monitor_cycle(force: bool = False) -> None:
+    """Corre cada 10 min hoy y pasa automáticamente a cada 5 min a las 00:00 hora Chile."""
     from config.settings import get_settings
     from main import build_components, configure_logging
     from scheduler.pipeline import MonitoringPipeline
+
+    now_utc = datetime.now(UTC)
+    if not force and now_utc < BLACK_FRIDAY_FAST_MODE_UTC and (now_utc.minute % 10) >= 5:
+        return
 
     get_settings.cache_clear()
     settings = get_settings()
@@ -129,4 +136,4 @@ def main(test_alert: bool = False) -> None:
     if test_alert:
         run_test_alert_remote.remote()
     else:
-        run_monitor_cycle.remote()
+        run_monitor_cycle.remote(force=True)
