@@ -79,6 +79,10 @@ class PriceAnomalyDetector:
         previous_price: int | None = None,
         recent_alerts: Sequence[AlertHistoryEntry] = (),
         now: datetime | None = None,
+        precomputed_median_30d: Decimal | None = None,
+        precomputed_avg_30d: Decimal | None = None,
+        precomputed_min_30d: int | None = None,
+        precomputed_samples: int | None = None,
     ) -> AnomalyDecision:
         # 1. Anti-false-positive filters
         if not observation.parse_ok:
@@ -110,7 +114,8 @@ class PriceAnomalyDetector:
         )
         valid_history = [p for p in history_30d if p > 0]
         valid_previous = previous_price if (previous_price is not None and previous_price > 0) else None
-        is_cold_start = len(valid_history) == 0 and valid_previous is None
+        has_precomputed = (precomputed_samples or 0) > 0 and precomputed_median_30d is not None
+        is_cold_start = (not has_precomputed) and len(valid_history) == 0 and valid_previous is None
 
         drop_vs_normal_pct = (
             _compute_drop_pct(Decimal(normal_price), current_price)
@@ -160,15 +165,25 @@ class PriceAnomalyDetector:
             )
 
         # 3. Steady-state evaluation with historical data
-        median_30d = _compute_decimal_median(valid_history) if valid_history else None
-        avg_30d = (
-            (sum((Decimal(p) for p in valid_history), Decimal(0)) / Decimal(len(valid_history)))
-            .quantize(Decimal("1"), rounding=ROUND_HALF_UP)
-            if valid_history
-            else None
-        )
-        min_30d = min(valid_history) if valid_history else None
-        history_samples = len(valid_history)
+        if has_precomputed:
+            median_30d = precomputed_median_30d
+            avg_30d = (
+                precomputed_avg_30d.quantize(Decimal("1"), rounding=ROUND_HALF_UP)
+                if precomputed_avg_30d is not None
+                else None
+            )
+            min_30d = precomputed_min_30d
+            history_samples = precomputed_samples or 0
+        else:
+            median_30d = _compute_decimal_median(valid_history) if valid_history else None
+            avg_30d = (
+                (sum((Decimal(p) for p in valid_history), Decimal(0)) / Decimal(len(valid_history)))
+                .quantize(Decimal("1"), rounding=ROUND_HALF_UP)
+                if valid_history
+                else None
+            )
+            min_30d = min(valid_history) if valid_history else None
+            history_samples = len(valid_history)
 
         drop_vs_median_pct = (
             _compute_drop_pct(median_30d, current_price)

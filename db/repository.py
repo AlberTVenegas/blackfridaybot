@@ -213,3 +213,144 @@ class PriceRepository:
             .limit(1)
         )
         return (await self._session.execute(stmt)).scalar_one_or_none()
+
+    async def upsert_products_batch(
+        self,
+        *,
+        retailer_id: int,
+        items: list[dict[str, object]],
+    ) -> dict[str, int]:
+        """Bulk upsert products for a retailer and return {sku: product_id}."""
+        if not items:
+            return {}
+        # Deduplicate by sku within batch (Postgres ON CONFLICT rejects duplicate keys in same stmt)
+        deduped: dict[str, dict[str, object]] = {}
+        now = datetime.now(UTC)
+        for item in items:
+            sku = str(item["sku"])
+            deduped[sku] = {
+                "retailer_id": retailer_id,
+                "sku": sku,
+                "name": item["name"],
+                "category": item.get("category"),
+                "url": item["url"],
+                "is_active": True,
+                "updated_at": now,
+            }
+        values = list(deduped.values())
+        stmt = pg_insert(Product).values(values)
+        stmt = stmt.on_conflict_do_update(
+            constraint="uq_products_retailer_sku",
+            set_={
+                "name": stmt.excluded.name,
+                "category": stmt.excluded.category,
+                "url": stmt.excluded.url,
+                "is_active": stmt.excluded.is_active,
+                "updated_at": stmt.excluded.updated_at,
+            },
+        ).returning(Product.sku, Product.id)
+        rows = (await self._session.execute(stmt)).all()
+        return {row.sku: row.id for row in rows}
+
+    async def get_price_stats_batch(
+        self,
+        product_ids: list[int],
+        *,
+        window_days: int = 30,
+        now: datetime | None = None,
+    ) -> dict[int, tuple[object, object, int | None, int, int | None]]:
+        """Compute 30d median, avg, min, sample count, and latest price in ONE SQL query.
+
+        Returns:
+            {product_id: (median_30d, avg_30d, min_30d, samples, previous_price)}
+        """
+        if not product_ids:
+            return {}
+        from decimal import Decimal
+
+        from sqlalchemy import text
+
+        reference_time = now or datetime.now(UTC)
+        cutoff = reference_time - timedelta(days=window_days)
+
+        sql = text(
+            """
+            SELECT
+                product_id,
+                percentile_cont(0.5) WITHIN GROUP (ORDER BY price) AS median_30d,
+                AVG(price) AS avg_30d,
+                MIN(price) AS min_30d,
+                COUNT(*) AS samples,
+                (ARRAY_AGG(price ORDER BY scraped_at DESC))[1] AS previous_price
+            FROM price_history
+            WHERE product_id = ANY(:product_ids)
+              AND scraped_at >= :cutoff
+              AND price > 0
+            GROUP BY product_id
+            """
+        )
+        rows = (
+            await self._session.execute(
+                sql,
+                {"product_ids": product_ids, "cutoff": cutoff},
+            )
+        ).all()
+        stats_map: dict[int, tuple[object, object, int | None, int, int | None]] = {}
+        for row in rows:
+            median_val = Decimal(str(row.median_30d)) if row.median_30d is not None else None
+            avg_val = Decimal(str(row.avg_30d)) if row.avg_30d is not None else None
+            stats_map[int(row.product_id)] = (
+                median_val,
+                avg_val,
+                int(row.min_30d) if row.min_30d is not None else None,
+                int(row.samples or 0),
+                int(row.previous_price) if row.previous_price is not None else None,
+            )
+        return stats_map
+
+    async def get_recent_alerts_batch(
+        self,
+        product_ids: list[int],
+        *,
+        cooldown_hours: int = 6,
+        now: datetime | None = None,
+    ) -> dict[int, list[RecentAlertRecord]]:
+        """Fetch recent alerts for a batch of product IDs in ONE SQL query."""
+        if not product_ids or cooldown_hours <= 0:
+            return {}
+        reference_time = now or datetime.now(UTC)
+        cutoff = reference_time - timedelta(hours=cooldown_hours)
+        stmt = (
+            select(
+                AlertSent.product_id,
+                AlertSent.alert_type,
+                AlertSent.price_triggered,
+                AlertSent.sent_at,
+            )
+            .where(
+                AlertSent.product_id.in_(product_ids),
+                AlertSent.sent_at >= cutoff,
+            )
+            .order_by(desc(AlertSent.sent_at))
+        )
+        rows = (await self._session.execute(stmt)).all()
+        grouped: dict[int, list[RecentAlertRecord]] = {}
+        for row in rows:
+            grouped.setdefault(int(row.product_id), []).append(
+                RecentAlertRecord(
+                    alert_type=row.alert_type,
+                    price_triggered=row.price_triggered,
+                    sent_at=row.sent_at,
+                )
+            )
+        return grouped
+
+    async def record_prices_batch(
+        self,
+        entries: list[dict[str, object]],
+    ) -> int:
+        """Bulk insert price observations in ONE SQL statement."""
+        if not entries:
+            return 0
+        await self._session.execute(pg_insert(PriceHistory).values(entries))
+        return len(entries)

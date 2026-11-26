@@ -281,6 +281,163 @@ class MonitoringPipeline:
         )
         return stats
 
+    async def process_scraped_batch(
+        self,
+        products: list[ScrapedProduct],
+        *,
+        retailer_base_url: str,
+        stats: CycleStats,
+    ) -> None:
+        """Persist a full category batch in ~4 SQL round-trips, evaluate in memory, and dispatch alerts."""
+        if not products:
+            return
+
+        from datetime import UTC, datetime
+        from decimal import Decimal
+
+        # Deduplicate by SKU keeping the last observation
+        deduped: dict[str, ScrapedProduct] = {}
+        for p in products:
+            deduped[p.sku] = p
+        batch = list(deduped.values())
+        stats.products_scraped += len(batch)
+
+        retailer_name = batch[0].retailer_name
+        pending_alerts: list[tuple[int, AlertPayload, str, int]] = []
+
+        async with self._db_semaphore:
+            async with self.db.session() as session:
+                repo = PriceRepository(session)
+                retailer = await repo.get_or_create_retailer(
+                    name=retailer_name,
+                    base_url=retailer_base_url,
+                )
+                sku_to_id = await repo.upsert_products_batch(
+                    retailer_id=retailer.id,
+                    items=[
+                        {
+                            "sku": p.sku,
+                            "name": p.name,
+                            "category": p.category,
+                            "url": p.url,
+                        }
+                        for p in batch
+                    ],
+                )
+                product_ids = list(sku_to_id.values())
+                stats_map = await repo.get_price_stats_batch(
+                    product_ids,
+                    window_days=self.settings.history_window_days,
+                )
+                recent_alerts_map = await repo.get_recent_alerts_batch(
+                    product_ids,
+                    cooldown_hours=self.settings.alert_cooldown_hours,
+                )
+
+                now = datetime.now(UTC)
+                price_rows: list[dict[str, object]] = []
+                for scraped in batch:
+                    pid = sku_to_id.get(scraped.sku)
+                    if pid is None:
+                        continue
+
+                    median_30d, avg_30d, min_30d, samples, previous_price = stats_map.get(
+                        pid, (None, None, None, 0, None)
+                    )
+
+                    if scraped.parse_ok and scraped.price_clp is not None and scraped.price_clp >= 0:
+                        price_rows.append(
+                            {
+                                "product_id": pid,
+                                "price": scraped.price_clp,
+                                "previous_price": previous_price,
+                                "normal_price": scraped.normal_price_clp,
+                                "payment_method": scraped.payment_method.value,
+                                "payment_method_label": scraped.payment_method_label,
+                                "in_stock": scraped.in_stock,
+                                "scraped_at": now,
+                            }
+                        )
+
+                    observation = PriceObservation(
+                        current_price=scraped.price_clp,
+                        in_stock=scraped.in_stock,
+                        normal_price=scraped.normal_price_clp,
+                        parse_ok=scraped.parse_ok,
+                        payment_method=scraped.payment_method,
+                        payment_method_label=scraped.payment_method_label,
+                    )
+                    recent_alerts = [
+                        AlertHistoryEntry(
+                            alert_type=a.alert_type,
+                            price_triggered=a.price_triggered,
+                            sent_at=a.sent_at,
+                        )
+                        for a in recent_alerts_map.get(pid, [])
+                    ]
+                    decision = self.detector.evaluate(
+                        observation,
+                        previous_price=previous_price,
+                        recent_alerts=recent_alerts,
+                        precomputed_median_30d=median_30d if isinstance(median_30d, Decimal) else None,
+                        precomputed_avg_30d=avg_30d if isinstance(avg_30d, Decimal) else None,
+                        precomputed_min_30d=min_30d,
+                        precomputed_samples=samples,
+                    )
+                    if (
+                        decision.should_alert
+                        and decision.alert_type is not None
+                        and scraped.price_clp is not None
+                    ):
+                        payload = AlertPayload(
+                            retailer_name=scraped.retailer_name,
+                            product_name=scraped.name,
+                            sku=scraped.sku,
+                            url=scraped.url,
+                            category=scraped.category,
+                            alert_type=decision.alert_type,
+                            current_price=scraped.price_clp,
+                            reference_price=decision.reference_price,
+                            reference_label=_reference_label_for_reason(decision.reason),
+                            discount_pct=decision.effective_discount_pct,
+                            payment_method=scraped.payment_method,
+                            payment_method_label=scraped.payment_method_label,
+                            all_payment_price_clp=scraped.all_payment_price_clp,
+                            avg_30d_price=int(decision.avg_30d) if decision.avg_30d is not None else None,
+                            min_30d_price=decision.min_30d,
+                            drop_vs_avg_pct=decision.drop_vs_avg_pct,
+                            history_samples=decision.history_samples,
+                            is_cold_start=decision.is_cold_start,
+                            reason=decision.reason,
+                        )
+                        pending_alerts.append(
+                            (pid, payload, decision.alert_type.value, scraped.price_clp)
+                        )
+
+                inserted = await repo.record_prices_batch(price_rows)
+                stats.prices_recorded += inserted
+
+        # Dispatch notifications outside the DB transaction
+        for pid, payload, alert_type_str, price_triggered in pending_alerts:
+            try:
+                dispatch_result = await self.dispatcher.dispatch(payload)
+                if dispatch_result.any_sent:
+                    async with self._db_semaphore:
+                        async with self.db.session() as session:
+                            repo = PriceRepository(session)
+                            await repo.record_alert(
+                                product_id=pid,
+                                alert_type=alert_type_str,
+                                price_triggered=price_triggered,
+                                twilio_called=dispatch_result.twilio_called,
+                            )
+                    stats.alerts_triggered += 1
+                    if dispatch_result.twilio_called:
+                        stats.twilio_calls += 1
+            except Exception:
+                stats.errors += 1
+                logger.exception("[%s] Alert dispatch failed for SKU %s", retailer_name, payload.sku)
+
     async def run_category_cycle(self) -> CycleStats:
         """Run category discovery monitoring across all enabled stores in parallel."""
         stats = CycleStats()
@@ -300,29 +457,11 @@ class MonitoringPipeline:
                                 category_name=cat.name,
                                 max_pages=cat.max_pages,
                             )
-
-                        async def _process_one(
-                            scraped: ScrapedProduct,
-                            slug: str = store_cfg.slug,
-                            base_url: str = scraper.base_url,
-                        ) -> None:
-                            stats.products_scraped += 1
-                            async with self._db_semaphore:
-                                try:
-                                    await self.process_scraped_product(
-                                        scraped,
-                                        retailer_base_url=base_url,
-                                        stats=stats,
-                                    )
-                                except Exception:
-                                    stats.errors += 1
-                                    logger.exception(
-                                        "[%s] Failed processing SKU %s",
-                                        slug,
-                                        scraped.sku,
-                                    )
-
-                        await asyncio.gather(*(_process_one(p) for p in products))
+                        await self.process_scraped_batch(
+                            products,
+                            retailer_base_url=scraper.base_url,
+                            stats=stats,
+                        )
                     except Exception:
                         stats.errors += 1
                         logger.exception(
