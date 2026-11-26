@@ -127,3 +127,10 @@ stores:
     enabled: false
     categories: []
     watchlist: []
+  alishaperfumes:
+    enabled: true
+    categories:
+      - name: "Perfumes"
+        url: "https://alishaperfumes.cl/products.json"
+        max_pages: 4
+    watchlist: []

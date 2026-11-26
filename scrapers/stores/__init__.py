@@ -1,3 +1,4 @@
+from scrapers.stores.alishaperfumes import AlishaPerfumesScraper
 from scrapers.stores.falabella import FalabellaScraper
 from scrapers.stores.paris import ParisScraper
 from scrapers.stores.samsung import SamsungScraper
@@ -14,6 +15,7 @@ from scrapers.stores.xiaomi import XiaomiScraper
 
 __all__ = [
     "AdidasScraper",
+    "AlishaPerfumesScraper",
     "DecathlonScraper",
     "FalabellaScraper",
     "LiderScraper",

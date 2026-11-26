@@ -4,6 +4,7 @@ from config.settings import Settings
 from scrapers.base import BaseScraper
 from scrapers.stores import (
     AdidasScraper,
+    AlishaPerfumesScraper,
     DecathlonScraper,
     FalabellaScraper,
     LiderScraper,
@@ -28,6 +29,7 @@ SCRAPER_REGISTRY: dict[str, type[BaseScraper]] = {
     "sodimac": SodimacScraper,
     "mercadolibre": MercadoLibreScraper,
     "lider": LiderScraper,
+    "alishaperfumes": AlishaPerfumesScraper,
 }
 
 
