@@ -134,3 +134,22 @@ stores:
         url: "https://alishaperfumes.cl/products.json"
         max_pages: 4
     watchlist: []
+  solotodo:
+    enabled: true
+    categories:
+      - name: "Smartphones"
+        url: "https://publicapi.solotodo.com/categories/6/browse/?ordering=leads&page_size=50"
+        max_pages: 2
+      - name: "Tablets"
+        url: "https://publicapi.solotodo.com/categories/14/browse/?ordering=leads&page_size=50"
+        max_pages: 2
+      - name: "Televisores"
+        url: "https://publicapi.solotodo.com/categories/11/browse/?ordering=leads&page_size=50"
+        max_pages: 2
+      - name: "Notebooks"
+        url: "https://publicapi.solotodo.com/categories/1/browse/?ordering=leads&page_size=50"
+        max_pages: 2
+      - name: "Consolas"
+        url: "https://publicapi.solotodo.com/categories/33/browse/?ordering=leads&page_size=50"
+        max_pages: 1
+    watchlist: []

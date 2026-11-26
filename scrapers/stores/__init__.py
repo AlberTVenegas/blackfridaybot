@@ -3,6 +3,7 @@ from scrapers.stores.falabella import FalabellaScraper
 from scrapers.stores.paris import ParisScraper
 from scrapers.stores.samsung import SamsungScraper
 from scrapers.stores.sodimac import SodimacScraper
+from scrapers.stores.solotodo import SoloTodoScraper
 from scrapers.stores.stubs import (
     AdidasScraper,
     DecathlonScraper,
@@ -25,5 +26,6 @@ __all__ = [
     "RipleyScraper",
     "SamsungScraper",
     "SodimacScraper",
+    "SoloTodoScraper",
     "XiaomiScraper",
 ]
