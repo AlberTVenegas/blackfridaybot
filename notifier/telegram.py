@@ -60,7 +60,7 @@ class TelegramNotifier(BaseNotifier):
             header = "🚨 *ERROR DE PRECIO / OFERTA EXTREMA* 🚨"
             level_tag = "#ERROR_DE_PRECIO"
         elif payload.alert_type == AlertType.STRONG_DEAL:
-            header = "🔥 *OFERTA FUERTE \\(50%\\-69%\\)* 🔥"
+            header = "🔥 *OFERTA FUERTE \\(65%\\-69%\\)* 🔥"
             level_tag = "#OFERTA_FUERTE"
         else:
             header = "📉 *MÍNIMO HISTÓRICO DETECTADO*"
