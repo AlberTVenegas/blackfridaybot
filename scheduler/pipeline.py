@@ -118,7 +118,9 @@ class MonitoringPipeline:
         self.detector = detector
         self.dispatcher = dispatcher
         self._semaphore = asyncio.Semaphore(settings.max_concurrent_requests)
-        self._db_semaphore = asyncio.Semaphore(max(2, min(8, settings.db_pool_size + 3)))
+        self._db_semaphore = asyncio.Semaphore(
+            max(4, min(12, settings.db_pool_size + settings.db_max_overflow - 2))
+        )
 
     async def hydrate_global_rate_limits(self) -> None:
         """Seed Twilio's in-memory global cooldown from Supabase on startup."""
@@ -280,14 +282,15 @@ class MonitoringPipeline:
         return stats
 
     async def run_category_cycle(self) -> CycleStats:
-        """Run category discovery monitoring across all enabled stores."""
+        """Run category discovery monitoring across all enabled stores in parallel."""
         stats = CycleStats()
-        targets = load_targets_config(self.settings.targets_config_path)
+        targets = [
+            cfg
+            for cfg in load_targets_config(self.settings.targets_config_path)
+            if cfg.enabled and cfg.categories
+        ]
 
-        for store_cfg in targets:
-            if not store_cfg.enabled or not store_cfg.categories:
-                continue
-
+        async def _run_store(store_cfg: StoreTargetConfig) -> None:
             async with create_scraper(store_cfg.slug, self.settings) as scraper:
                 for cat in store_cfg.categories:
                     try:
@@ -297,6 +300,7 @@ class MonitoringPipeline:
                                 category_name=cat.name,
                                 max_pages=cat.max_pages,
                             )
+
                         async def _process_one(
                             scraped: ScrapedProduct,
                             slug: str = store_cfg.slug,
@@ -326,6 +330,8 @@ class MonitoringPipeline:
                             store_cfg.slug,
                             cat.name,
                         )
+
+        await asyncio.gather(*(_run_store(cfg) for cfg in targets))
 
         logger.info(
             "Category cycle finished: scraped=%d recorded=%d alerts=%d twilio_calls=%d errors=%d",
