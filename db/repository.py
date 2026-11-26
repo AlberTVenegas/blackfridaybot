@@ -258,11 +258,11 @@ class PriceRepository:
         *,
         window_days: int = 30,
         now: datetime | None = None,
-    ) -> dict[int, tuple[object, object, int | None, int, int | None]]:
-        """Compute 30d median, avg, min, sample count, and latest price in ONE SQL query.
+    ) -> dict[int, tuple[object, object, int | None, int, int | None, datetime | None]]:
+        """Compute 30d median, avg, min, sample count, latest price, and last timestamp in ONE SQL query.
 
         Returns:
-            {product_id: (median_30d, avg_30d, min_30d, samples, previous_price)}
+            {product_id: (median_30d, avg_30d, min_30d, samples, previous_price, last_scraped_at)}
         """
         if not product_ids:
             return {}
@@ -281,7 +281,8 @@ class PriceRepository:
                 AVG(price) AS avg_30d,
                 MIN(price) AS min_30d,
                 COUNT(*) AS samples,
-                (ARRAY_AGG(price ORDER BY scraped_at DESC))[1] AS previous_price
+                (ARRAY_AGG(price ORDER BY scraped_at DESC))[1] AS previous_price,
+                MAX(scraped_at) AS last_scraped_at
             FROM price_history
             WHERE product_id = ANY(:product_ids)
               AND scraped_at >= :cutoff
@@ -295,7 +296,7 @@ class PriceRepository:
                 {"product_ids": product_ids, "cutoff": cutoff},
             )
         ).all()
-        stats_map: dict[int, tuple[object, object, int | None, int, int | None]] = {}
+        stats_map: dict[int, tuple[object, object, int | None, int, int | None, datetime | None]] = {}
         for row in rows:
             median_val = Decimal(str(row.median_30d)) if row.median_30d is not None else None
             avg_val = Decimal(str(row.avg_30d)) if row.avg_30d is not None else None
@@ -305,6 +306,7 @@ class PriceRepository:
                 int(row.min_30d) if row.min_30d is not None else None,
                 int(row.samples or 0),
                 int(row.previous_price) if row.previous_price is not None else None,
+                row.last_scraped_at,
             )
         return stats_map
 
@@ -354,3 +356,18 @@ class PriceRepository:
             return 0
         await self._session.execute(pg_insert(PriceHistory).values(entries))
         return len(entries)
+
+    async def prune_old_history(
+        self,
+        *,
+        retention_days: int = 7,
+        now: datetime | None = None,
+    ) -> int:
+        """Delete price_history rows older than `retention_days` to keep DB lean."""
+        from sqlalchemy import delete
+
+        reference_time = now or datetime.now(UTC)
+        cutoff = reference_time - timedelta(days=max(1, retention_days))
+        stmt = delete(PriceHistory).where(PriceHistory.scraped_at < cutoff)
+        result = await self._session.execute(stmt)
+        return int(result.rowcount or 0)

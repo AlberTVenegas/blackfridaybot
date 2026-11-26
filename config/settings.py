@@ -34,18 +34,30 @@ class Settings(BaseSettings):
         description="Percentage drop (>=) that classifies an offer as PRICE_ERROR.",
     )
     strong_deal_threshold: Decimal = Field(
-        default=Decimal(40),
+        default=Decimal(50),
         ge=Decimal(1),
         le=Decimal("99.0"),
         description="Percentage drop (>= and < extreme) that classifies an offer as STRONG_DEAL.",
     )
     historical_low_min_drop: Decimal = Field(
-        default=Decimal(10),
+        default=Decimal(50),
         ge=Decimal("0.1"),
         le=Decimal(99),
         description="Minimum percentage drop vs 30d median to alert HISTORICAL_LOW.",
     )
     history_window_days: int = Field(default=30, ge=1, le=365)
+    history_retention_days: int = Field(
+        default=7,
+        ge=1,
+        le=90,
+        description="Automatically prune price_history rows older than this many days.",
+    )
+    price_record_min_interval_minutes: int = Field(
+        default=60,
+        ge=0,
+        le=1440,
+        description="Minimum minutes before recording an identical unchanged price again.",
+    )
     alert_cooldown_hours: int = Field(default=6, ge=0, le=168)
     cold_start_absurd_price_clp: int = Field(
         default=1000,

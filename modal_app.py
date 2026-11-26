@@ -73,6 +73,7 @@ async def run_monitor_cycle() -> None:
         await pipeline.hydrate_global_rate_limits()
         watchlist_stats = await pipeline.run_watchlist_cycle()
         category_stats = await pipeline.run_category_cycle()
+        await pipeline.prune_old_history()
         logging.getLogger(__name__).info(
             "Modal cycle complete | watchlist(scraped=%d, alerts=%d, errors=%d) | "
             "categories(scraped=%d, recorded=%d, alerts=%d, errors=%d)",

@@ -334,30 +334,39 @@ class MonitoringPipeline:
                     cooldown_hours=self.settings.alert_cooldown_hours,
                 )
 
+                from datetime import timedelta
+
                 now = datetime.now(UTC)
+                min_interval = timedelta(minutes=self.settings.price_record_min_interval_minutes)
                 price_rows: list[dict[str, object]] = []
                 for scraped in batch:
                     pid = sku_to_id.get(scraped.sku)
                     if pid is None:
                         continue
 
-                    median_30d, avg_30d, min_30d, samples, previous_price = stats_map.get(
-                        pid, (None, None, None, 0, None)
+                    median_30d, avg_30d, min_30d, samples, previous_price, last_scraped_at = (
+                        stats_map.get(pid, (None, None, None, 0, None, None))
                     )
 
                     if scraped.parse_ok and scraped.price_clp is not None and scraped.price_clp >= 0:
-                        price_rows.append(
-                            {
-                                "product_id": pid,
-                                "price": scraped.price_clp,
-                                "previous_price": previous_price,
-                                "normal_price": scraped.normal_price_clp,
-                                "payment_method": scraped.payment_method.value,
-                                "payment_method_label": scraped.payment_method_label,
-                                "in_stock": scraped.in_stock,
-                                "scraped_at": now,
-                            }
+                        price_changed = previous_price is None or scraped.price_clp != previous_price
+                        interval_elapsed = (
+                            last_scraped_at is None
+                            or (now - last_scraped_at) >= min_interval
                         )
+                        if price_changed or interval_elapsed:
+                            price_rows.append(
+                                {
+                                    "product_id": pid,
+                                    "price": scraped.price_clp,
+                                    "previous_price": previous_price,
+                                    "normal_price": scraped.normal_price_clp,
+                                    "payment_method": scraped.payment_method.value,
+                                    "payment_method_label": scraped.payment_method_label,
+                                    "in_stock": scraped.in_stock,
+                                    "scraped_at": now,
+                                }
+                            )
 
                     observation = PriceObservation(
                         current_price=scraped.price_clp,
@@ -481,3 +490,22 @@ class MonitoringPipeline:
             stats.errors,
         )
         return stats
+
+    async def prune_old_history(self) -> int:
+        """Delete price_history rows older than `history_retention_days`."""
+        try:
+            async with self.db.session() as session:
+                repo = PriceRepository(session)
+                deleted = await repo.prune_old_history(
+                    retention_days=self.settings.history_retention_days
+                )
+            if deleted > 0:
+                logger.info(
+                    "Pruned %d old price_history rows (retention=%dd)",
+                    deleted,
+                    self.settings.history_retention_days,
+                )
+            return deleted
+        except Exception:
+            logger.warning("Could not prune old price_history rows", exc_info=True)
+            return 0
