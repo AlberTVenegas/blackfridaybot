@@ -153,3 +153,24 @@ stores:
         url: "https://publicapi.solotodo.com/categories/33/browse/?ordering=leads&page_size=50"
         max_pages: 1
     watchlist: []
+  bold:
+    enabled: true
+    categories:
+      - name: "Zapatillas"
+        url: "https://www.bold.cl/products.json"
+        max_pages: 3
+    watchlist: []
+  lippi:
+    enabled: true
+    categories:
+      - name: "Outdoor y Moda"
+        url: "https://www.lippioutdoor.com/products.json"
+        max_pages: 3
+    watchlist: []
+  silkperfumes:
+    enabled: true
+    categories:
+      - name: "Perfumes"
+        url: "https://silkperfumes.cl/products.json"
+        max_pages: 3
+    watchlist: []

@@ -5,14 +5,17 @@ from scrapers.base import BaseScraper
 from scrapers.stores import (
     AdidasScraper,
     AlishaPerfumesScraper,
+    BoldScraper,
     DecathlonScraper,
     FalabellaScraper,
     LiderScraper,
+    LippiScraper,
     MercadoLibreScraper,
     NikeScraper,
     ParisScraper,
     RipleyScraper,
     SamsungScraper,
+    SilkPerfumesScraper,
     SodimacScraper,
     SoloTodoScraper,
     XiaomiScraper,
@@ -32,6 +35,9 @@ SCRAPER_REGISTRY: dict[str, type[BaseScraper]] = {
     "lider": LiderScraper,
     "alishaperfumes": AlishaPerfumesScraper,
     "solotodo": SoloTodoScraper,
+    "bold": BoldScraper,
+    "lippi": LippiScraper,
+    "silkperfumes": SilkPerfumesScraper,
 }
 
 
