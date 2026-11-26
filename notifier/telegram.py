@@ -167,3 +167,58 @@ class TelegramNotifier(BaseNotifier):
             format_clp(payload.current_price),
         )
         return True
+
+    async def send_no_deals_summary(
+        self,
+        *,
+        products_scraped: int,
+        prices_recorded: int,
+        errors: int = 0,
+    ) -> bool:
+        """Send a short status message when a monitoring cycle finds no new deals."""
+        if not self.is_configured:
+            logger.warning("TelegramNotifier is not configured; skipping no-deals summary.")
+            return False
+
+        scraped_str = escape_markdown_v2(f"{products_scraped:,}".replace(",", "."))
+        recorded_str = escape_markdown_v2(f"{prices_recorded:,}".replace(",", "."))
+        errors_str = escape_markdown_v2(str(errors))
+
+        lines = [
+            "✅ *Ciclo completado — Sin ofertas nuevas*",
+            "",
+            f"🔍 *Productos revisados:* {scraped_str}",
+            f"💾 *Precios guardados:* {recorded_str}",
+        ]
+        if errors > 0:
+            lines.append(f"⚠️ *Errores puntuales:* {errors_str}")
+        lines.extend(
+            [
+                "",
+                escape_markdown_v2("No se encontraron bajas relevantes en este ciclo. Próxima revisión en 10 min."),
+            ]
+        )
+
+        endpoint = f"{self.API_BASE}/bot{self._bot_token}/sendMessage"
+        body = {
+            "chat_id": self._chat_id,
+            "text": "\n".join(lines),
+            "parse_mode": "MarkdownV2",
+            "disable_web_page_preview": True,
+        }
+
+        if self._external_client is not None:
+            resp = await self._external_client.post(endpoint, json=body)
+            resp.raise_for_status()
+        else:
+            async with httpx.AsyncClient(timeout=self._timeout) as client:
+                resp = await client.post(endpoint, json=body)
+                resp.raise_for_status()
+
+        logger.info(
+            "Telegram no-deals summary sent (scraped=%d, recorded=%d, errors=%d)",
+            products_scraped,
+            prices_recorded,
+            errors,
+        )
+        return True

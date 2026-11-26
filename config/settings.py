@@ -59,6 +59,10 @@ class Settings(BaseSettings):
     # Telegram Bot API
     telegram_bot_token: str = Field(default="")
     telegram_chat_id: str = Field(default="")
+    notify_on_no_deals: bool = Field(
+        default=True,
+        description="Send a short Telegram status message when a cycle finishes with zero alerts.",
+    )
 
     # Twilio Voice API
     twilio_enabled: bool = Field(default=True)

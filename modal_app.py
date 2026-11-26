@@ -84,6 +84,17 @@ async def run_monitor_cycle() -> None:
             category_stats.alerts_triggered,
             category_stats.errors,
         )
+        total_alerts = watchlist_stats.alerts_triggered + category_stats.alerts_triggered
+        if total_alerts == 0 and settings.notify_on_no_deals:
+            await dispatcher.telegram.send_no_deals_summary(
+                products_scraped=(
+                    watchlist_stats.products_scraped + category_stats.products_scraped
+                ),
+                prices_recorded=(
+                    watchlist_stats.prices_recorded + category_stats.prices_recorded
+                ),
+                errors=watchlist_stats.errors + category_stats.errors,
+            )
     finally:
         await db.dispose()
 

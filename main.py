@@ -125,8 +125,19 @@ async def async_main(args: argparse.Namespace) -> None:
 
         if args.once:
             await pipeline.hydrate_global_rate_limits()
-            await pipeline.run_watchlist_cycle()
-            await pipeline.run_category_cycle()
+            watchlist_stats = await pipeline.run_watchlist_cycle()
+            category_stats = await pipeline.run_category_cycle()
+            total_alerts = watchlist_stats.alerts_triggered + category_stats.alerts_triggered
+            if total_alerts == 0 and settings.notify_on_no_deals:
+                await dispatcher.telegram.send_no_deals_summary(
+                    products_scraped=(
+                        watchlist_stats.products_scraped + category_stats.products_scraped
+                    ),
+                    prices_recorded=(
+                        watchlist_stats.prices_recorded + category_stats.prices_recorded
+                    ),
+                    errors=watchlist_stats.errors + category_stats.errors,
+                )
             return
 
         await run_scheduler_forever(settings=settings, pipeline=pipeline)
