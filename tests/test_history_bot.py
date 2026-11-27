@@ -84,3 +84,34 @@ async def test_telegram_alert_includes_inline_history_button() -> None:
         sent_json = route.calls[0].request.content.decode()
         assert "hist:777" in sent_json
         assert "Ver historial de precios" in sent_json
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_telegram_ejecutar_command_triggers_cycle(test_settings) -> None:
+    from notifier.telegram_bot import handle_telegram_update
+
+    route = respx.post("https://api.telegram.org/bot123456:TEST_TOKEN/sendMessage").mock(
+        return_value=httpx.Response(200, json={"ok": True})
+    )
+    triggered = {"count": 0}
+
+    def _spawn() -> None:
+        triggered["count"] += 1
+
+    update = {
+        "message": {
+            "message_id": 10,
+            "chat": {"id": -1006000638645},
+            "text": "/ejecutar",
+        }
+    }
+    await handle_telegram_update(
+        update,
+        settings=test_settings,
+        db=None,  # type: ignore[arg-type]
+        trigger_cycle=_spawn,
+    )
+    assert triggered["count"] == 1
+    assert route.call_count == 1
+    assert "Revisi" in route.calls[0].request.content.decode()

@@ -126,8 +126,9 @@ async def handle_telegram_update(
     *,
     settings: Settings,
     db: DatabaseManager,
+    trigger_cycle: Any | None = None,
 ) -> None:
-    """Process incoming Telegram webhook updates (inline history button & /historial command)."""
+    """Process incoming Telegram webhook updates (inline buttons, /ejecutar, /estado, /historial)."""
     bot_token = settings.telegram_bot_token.strip()
     if not bot_token:
         return
@@ -179,7 +180,7 @@ async def handle_telegram_update(
             await _tg_post(bot_token, "sendMessage", send_payload)
         return
 
-    # 2. Text command: /historial <nombre o SKU>
+    # 2. Text commands: /ejecutar, /ahora, /estado, /historial
     message = update.get("message")
     if not isinstance(message, dict):
         return
@@ -191,7 +192,96 @@ async def handle_telegram_update(
         return
 
     first_token = text_raw.split()[0].lower()
-    if not (first_token == "/historial" or first_token.startswith("/historial@")):
+    cmd = first_token.split("@", 1)[0]
+
+    # /ejecutar or /ahora -> spawn an on-demand monitoring cycle
+    if cmd in ("/ejecutar", "/ahora"):
+        if trigger_cycle is None:
+            await _tg_post(
+                bot_token,
+                "sendMessage",
+                {
+                    "chat_id": chat_id,
+                    "reply_to_message_id": reply_to,
+                    "text": "⚠️ La ejecución manual no está conectada en este entorno.",
+                },
+            )
+            return
+        try:
+            trigger_cycle()
+            await _tg_post(
+                bot_token,
+                "sendMessage",
+                {
+                    "chat_id": chat_id,
+                    "reply_to_message_id": reply_to,
+                    "text": (
+                        "🚀 Revisión manual iniciada en las 11 tiendas.\n"
+                        "En ~1–2 minutos te llegarán las ofertas (≥ 50%) o el resumen del ciclo."
+                    ),
+                },
+            )
+        except Exception as exc:
+            logger.exception("Failed to spawn manual cycle")
+            await _tg_post(
+                bot_token,
+                "sendMessage",
+                {
+                    "chat_id": chat_id,
+                    "reply_to_message_id": reply_to,
+                    "text": f"❌ No se pudo iniciar la revisión manual: {exc}",
+                },
+            )
+        return
+
+    # /estado -> quick DB stats + last update time in Chile
+    if cmd == "/estado":
+        from sqlalchemy import text as sql_text
+
+        async with db.session() as session:
+            row = (
+                await session.execute(
+                    sql_text(
+                        """
+                        SELECT
+                            (SELECT COUNT(*) FROM products) AS prods,
+                            (SELECT COUNT(*) FROM price_history) AS hist,
+                            (SELECT COUNT(*) FROM alerts_sent) AS alerts,
+                            (SELECT MAX(scraped_at) FROM price_history) AS last_ts
+                        """
+                    )
+                )
+            ).first()
+        prods = int(row.prods or 0) if row else 0
+        hist = int(row.hist or 0) if row else 0
+        alerts = int(row.alerts or 0) if row else 0
+        last_ts = row.last_ts if row else None
+        if isinstance(last_ts, datetime):
+            if last_ts.tzinfo is None:
+                last_ts = last_ts.replace(tzinfo=UTC)
+            last_str = (last_ts + CHILE_OFFSET).strftime("%d/%m %H:%M") + " (hora Chile)"
+        else:
+            last_str = "Sin registros aún"
+
+        await _tg_post(
+            bot_token,
+            "sendMessage",
+            {
+                "chat_id": chat_id,
+                "reply_to_message_id": reply_to,
+                "text": (
+                    "🤖 Estado de BlackFridayHunterCL\n\n"
+                    f"📦 Productos monitoreados: {prods:,}\n"
+                    f"📈 Registros históricos (60d): {hist:,}\n"
+                    f"🚨 Alertas enviadas: {alerts:,}\n"
+                    f"🕒 Última captura: {last_str}\n"
+                    f"🔥 Umbral activo: ≥ {int(settings.strong_deal_threshold)}%"
+                ).replace(",", "."),
+            },
+        )
+        return
+
+    if cmd != "/historial":
         return
 
     query = text_raw[len(text_raw.split()[0]):].strip()

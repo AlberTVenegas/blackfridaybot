@@ -149,7 +149,12 @@ async def telegram_webhook(request: dict[str, object]) -> dict[str, bool]:
     settings = get_settings()
     db = DatabaseManager(settings)
     try:
-        await handle_telegram_update(request, settings=settings, db=db)
+        await handle_telegram_update(
+            request,
+            settings=settings,
+            db=db,
+            trigger_cycle=lambda: run_monitor_cycle.spawn(force=True),
+        )
     finally:
         await db.dispose()
     return {"ok": True}
