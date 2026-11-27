@@ -99,11 +99,11 @@ class TelegramNotifier(BaseNotifier):
                 detail = f"(+{abs(payload.drop_vs_avg_pct):.1f}% sobre promedio · {payload.history_samples} capturas)"
             else:
                 detail = f"({payload.history_samples} capturas)"
-            lines.append(f"📈 *Promedio histórico 30d:* {avg_str} {escape_markdown_v2(detail)}")
+            lines.append(f"📈 *Promedio histórico 60d:* {avg_str} {escape_markdown_v2(detail)}")
 
         if payload.min_30d_price is not None and payload.history_samples > 0:
             min_str = escape_markdown_v2(f"{format_clp(payload.min_30d_price)} CLP")
-            lines.append(f"⬇️ *Mínimo previo 30d:* {min_str}")
+            lines.append(f"⬇️ *Mínimo previo 60d:* {min_str}")
 
         # Payment method clarity (Store card vs All payment methods)
         payment_icon = (

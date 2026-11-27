@@ -45,11 +45,11 @@ class Settings(BaseSettings):
         le=Decimal(99),
         description="Minimum percentage drop vs 30d median to alert HISTORICAL_LOW.",
     )
-    history_window_days: int = Field(default=30, ge=1, le=365)
+    history_window_days: int = Field(default=60, ge=1, le=365)
     history_retention_days: int = Field(
-        default=7,
+        default=60,
         ge=1,
-        le=90,
+        le=365,
         description="Automatically prune price_history rows older than this many days.",
     )
     price_record_min_interval_minutes: int = Field(

@@ -402,7 +402,7 @@ class PriceRepository:
               AND scraped_at >= :cutoff
               AND price > 0
             ORDER BY scraped_at DESC
-            LIMIT 200
+            LIMIT 1500
             """
         )
         hist_rows = (

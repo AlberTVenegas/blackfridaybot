@@ -99,7 +99,7 @@ def _reference_label_for_reason(reason: str) -> str:
         return "Precio normal tienda"
     if reason == "previous_price_extreme_drop":
         return "Precio anterior"
-    return "Mediana 30 días"
+    return "Mediana 60 días"
 
 
 class MonitoringPipeline:
