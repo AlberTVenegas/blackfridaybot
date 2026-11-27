@@ -145,12 +145,23 @@ class TelegramNotifier(BaseNotifier):
             return False
 
         endpoint = f"{self.API_BASE}/bot{self._bot_token}/sendMessage"
-        body = {
+        body: dict[str, object] = {
             "chat_id": self._chat_id,
             "text": self.format_message(payload),
             "parse_mode": "MarkdownV2",
             "disable_web_page_preview": False,
         }
+        if payload.product_id is not None:
+            body["reply_markup"] = {
+                "inline_keyboard": [
+                    [
+                        {
+                            "text": "📊 Ver historial de precios",
+                            "callback_data": f"hist:{payload.product_id}",
+                        }
+                    ]
+                ]
+            }
 
         if self._external_client is not None:
             resp = await self._external_client.post(endpoint, json=body, timeout=self._timeout)

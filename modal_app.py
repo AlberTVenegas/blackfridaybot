@@ -25,6 +25,7 @@ app = modal.App(APP_NAME)
 image = (
     modal.Image.debian_slim(python_version="3.12")
     .pip_install_from_requirements("requirements.txt")
+    .pip_install("fastapi[standard]")
     .run_commands("playwright install --with-deps chromium")
     .env({"PYTHONPATH": "/app", "PYTHONUNBUFFERED": "1"})
     .workdir("/app")
@@ -128,6 +129,30 @@ async def run_test_alert_remote() -> None:
         await run_test_alert(dispatcher)
     finally:
         await db.dispose()
+
+
+@app.function(
+    image=image,
+    secrets=[modal.Secret.from_name(SECRET_NAME)],
+    timeout=30,
+    cpu=0.25,
+    memory=256,
+)
+@modal.fastapi_endpoint(method="POST")
+async def telegram_webhook(request: dict[str, object]) -> dict[str, bool]:
+    """Webhook serverless de Telegram para el botón 'Ver historial' y el comando /historial."""
+    from config.settings import get_settings
+    from db.session import DatabaseManager
+    from notifier.telegram_bot import handle_telegram_update
+
+    get_settings.cache_clear()
+    settings = get_settings()
+    db = DatabaseManager(settings)
+    try:
+        await handle_telegram_update(request, settings=settings, db=db)
+    finally:
+        await db.dispose()
+    return {"ok": True}
 
 
 @app.local_entrypoint()

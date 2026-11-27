@@ -33,6 +33,7 @@ class AlertPayload:
     min_30d_price: int | None = None
     drop_vs_avg_pct: Decimal | None = None
     history_samples: int = 0
+    product_id: int | None = None
     is_cold_start: bool = False
     reason: str = ""
 

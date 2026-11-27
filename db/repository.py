@@ -371,3 +371,101 @@ class PriceRepository:
         stmt = delete(PriceHistory).where(PriceHistory.scraped_at < cutoff)
         result = await self._session.execute(stmt)
         return int(result.rowcount or 0)
+
+    async def get_product_price_history(
+        self,
+        product_id: int,
+        *,
+        window_days: int = 30,
+    ) -> dict[str, object] | None:
+        """Fetch product metadata and its 30d price history for Telegram history lookups."""
+        from sqlalchemy import text
+
+        prod_sql = text(
+            """
+            SELECT p.id, p.sku, p.name, p.category, p.url, r.name AS retailer_name
+            FROM products p
+            JOIN retailers r ON r.id = p.retailer_id
+            WHERE p.id = :pid
+            """
+        )
+        prod_row = (await self._session.execute(prod_sql, {"pid": product_id})).first()
+        if prod_row is None:
+            return None
+
+        cutoff = datetime.now(UTC) - timedelta(days=window_days)
+        hist_sql = text(
+            """
+            SELECT price, normal_price, payment_method, payment_method_label, in_stock, scraped_at
+            FROM price_history
+            WHERE product_id = :pid
+              AND scraped_at >= :cutoff
+              AND price > 0
+            ORDER BY scraped_at DESC
+            LIMIT 200
+            """
+        )
+        hist_rows = (
+            await self._session.execute(hist_sql, {"pid": product_id, "cutoff": cutoff})
+        ).all()
+
+        return {
+            "id": int(prod_row.id),
+            "sku": prod_row.sku,
+            "name": prod_row.name,
+            "category": prod_row.category,
+            "url": prod_row.url,
+            "retailer_name": prod_row.retailer_name,
+            "history": [
+                {
+                    "price": int(r.price),
+                    "normal_price": int(r.normal_price) if r.normal_price is not None else None,
+                    "payment_method": r.payment_method,
+                    "payment_method_label": r.payment_method_label,
+                    "in_stock": bool(r.in_stock),
+                    "scraped_at": r.scraped_at,
+                }
+                for r in hist_rows
+            ],
+        }
+
+    async def search_products_by_query(
+        self,
+        query: str,
+        *,
+        limit: int = 5,
+    ) -> list[dict[str, object]]:
+        """Search products by exact SKU or case-insensitive name substring."""
+        from sqlalchemy import text
+
+        cleaned = query.strip()
+        if not cleaned:
+            return []
+
+        sql = text(
+            """
+            SELECT p.id, p.sku, p.name, r.name AS retailer_name
+            FROM products p
+            JOIN retailers r ON r.id = p.retailer_id
+            WHERE LOWER(p.sku) = LOWER(:exact)
+               OR p.name ILIKE :pattern
+            ORDER BY (CASE WHEN LOWER(p.sku) = LOWER(:exact) THEN 0 ELSE 1 END),
+                     p.updated_at DESC
+            LIMIT :lim
+            """
+        )
+        rows = (
+            await self._session.execute(
+                sql,
+                {"exact": cleaned, "pattern": f"%{cleaned}%", "lim": limit},
+            )
+        ).all()
+        return [
+            {
+                "id": int(r.id),
+                "sku": r.sku,
+                "name": r.name,
+                "retailer_name": r.retailer_name,
+            }
+            for r in rows
+        ]

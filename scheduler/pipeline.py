@@ -225,6 +225,7 @@ class MonitoringPipeline:
                 min_30d_price=decision.min_30d,
                 drop_vs_avg_pct=decision.drop_vs_avg_pct,
                 history_samples=decision.history_samples,
+                product_id=product.id,
                 is_cold_start=decision.is_cold_start,
                 reason=decision.reason,
             )
@@ -416,6 +417,7 @@ class MonitoringPipeline:
                             min_30d_price=decision.min_30d,
                             drop_vs_avg_pct=decision.drop_vs_avg_pct,
                             history_samples=decision.history_samples,
+                            product_id=pid,
                             is_cold_start=decision.is_cold_start,
                             reason=decision.reason,
                         )
