@@ -7,6 +7,7 @@ from scrapers.stores import (
     AlishaPerfumesScraper,
     BoldScraper,
     DecathlonScraper,
+    ElitePerfumesScraper,
     FalabellaScraper,
     LiderScraper,
     LippiScraper,
@@ -38,6 +39,7 @@ SCRAPER_REGISTRY: dict[str, type[BaseScraper]] = {
     "bold": BoldScraper,
     "lippi": LippiScraper,
     "silkperfumes": SilkPerfumesScraper,
+    "eliteperfumes": ElitePerfumesScraper,
 }
 
 

@@ -4,6 +4,7 @@ from scrapers.stores.paris import ParisScraper
 from scrapers.stores.samsung import SamsungScraper
 from scrapers.stores.shopify_stores import (
     BoldScraper,
+    ElitePerfumesScraper,
     LippiScraper,
     SilkPerfumesScraper,
 )
@@ -24,6 +25,7 @@ __all__ = [
     "AlishaPerfumesScraper",
     "BoldScraper",
     "DecathlonScraper",
+    "ElitePerfumesScraper",
     "FalabellaScraper",
     "LiderScraper",
     "LippiScraper",

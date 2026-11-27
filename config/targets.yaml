@@ -174,3 +174,10 @@ stores:
         url: "https://silkperfumes.cl/products.json"
         max_pages: 3
     watchlist: []
+  eliteperfumes:
+    enabled: true
+    categories:
+      - name: "Perfumes"
+        url: "https://www.eliteperfumes.cl/products.json"
+        max_pages: 4
+    watchlist: []

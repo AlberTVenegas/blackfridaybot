@@ -25,3 +25,11 @@ class SilkPerfumesScraper(AlishaPerfumesScraper):
     retailer_name = "Silk Perfumes"
     retailer_slug = "silkperfumes"
     base_url = "https://silkperfumes.cl"
+
+
+class ElitePerfumesScraper(AlishaPerfumesScraper):
+    """Production scraper for Elite Perfumes Chile (https://www.eliteperfumes.cl)."""
+
+    retailer_name = "Elite Perfumes"
+    retailer_slug = "eliteperfumes"
+    base_url = "https://www.eliteperfumes.cl"
