@@ -177,7 +177,7 @@ stores:
   eliteperfumes:
     enabled: true
     categories:
-      - name: "Perfumes"
-        url: "https://www.eliteperfumes.cl/products.json"
+      - name: "Perfumes Black Friday"
+        url: "https://www.eliteperfumes.cl/collections/black-friday/products.json"
         max_pages: 4
     watchlist: []
