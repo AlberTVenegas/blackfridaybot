@@ -18,14 +18,20 @@ stores:
       - name: "Notebooks"
         url: "https://www.falabella.com/falabella-cl/category/cat70057/Notebooks"
         max_pages: 2
-      # Calzado deportivo (incluye Nike, Adidas, etc.)
-      - name: "Zapatillas"
-        url: "https://www.falabella.com/falabella-cl/category/cat2018/Zapatillas"
+      # Calzado y Moda Hombre (verificadas)
+      - name: "Zapatillas Hombre"
+        url: "https://www.falabella.com/falabella-cl/category/cat850064/Zapatillas-Hombre"
         max_pages: 2
-      # Moda y Hogar
-      - name: "Moda (Chaquetas y Parkas)"
-        url: "https://www.falabella.com/falabella-cl/category/cat2019/Parkas-y-Chaquetas-Hombre"
+      - name: "Poleras Hombre"
+        url: "https://www.falabella.com/falabella-cl/category/cat1320010/Poleras-Hombre"
         max_pages: 1
+      - name: "Jeans Hombre"
+        url: "https://www.falabella.com/falabella-cl/category/cat7450073/Jeans-Hombre"
+        max_pages: 1
+      - name: "Chaquetas y Cortavientos Hombre"
+        url: "https://www.falabella.com/falabella-cl/category/cat12650004/Cortavientos-Hombre"
+        max_pages: 1
+      # Hogar
       - name: "Hogar y Muebles"
         url: "https://www.falabella.com/falabella-cl/category/cat2023/Muebles"
         max_pages: 1
@@ -46,14 +52,17 @@ stores:
       - name: "Televisores"
         url: "https://www.paris.cl/electro/television/"
         max_pages: 2
-      # Calzado deportivo (incluye Nike, Adidas, etc.)
-      - name: "Zapatillas"
-        url: "https://www.paris.cl/deportes/zapatillas/"
+      # Calzado y Moda Hombre
+      - name: "Zapatillas Hombre"
+        url: "https://www.paris.cl/zapatos/zapatillas/urbanas/hombres/"
         max_pages: 2
-      # Moda y Hogar
-      - name: "Moda"
+      - name: "Moda Hombre"
         url: "https://www.paris.cl/hombre/moda/"
         max_pages: 1
+      - name: "Polerones Hombre"
+        url: "https://www.paris.cl/hombre/moda/polerones/"
+        max_pages: 1
+      # Hogar
       - name: "Hogar y Muebles"
         url: "https://www.paris.cl/muebles/"
         max_pages: 1
@@ -156,15 +165,18 @@ stores:
   bold:
     enabled: true
     categories:
-      - name: "Zapatillas"
-        url: "https://www.bold.cl/products.json"
+      - name: "Zapatillas Hombre"
+        url: "https://www.bold.cl/collections/zapatillas-hombre/products.json"
         max_pages: 3
+      - name: "Moda y Accesorios Hombre"
+        url: "https://www.bold.cl/collections/hombre/products.json"
+        max_pages: 2
     watchlist: []
   lippi:
     enabled: true
     categories:
-      - name: "Outdoor y Moda"
-        url: "https://www.lippioutdoor.com/products.json"
+      - name: "Outdoor Hombre"
+        url: "https://www.lippioutdoor.com/collections/hombre/products.json"
         max_pages: 3
     watchlist: []
   silkperfumes:
