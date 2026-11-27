@@ -1,0 +1,53 @@
+services:
+  - type: web
+    name: bf-price-hunter
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements-render.txt
+    startCommand: uvicorn web_server:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.7"
+      - key: PLAYWRIGHT_FALLBACK_ENABLED
+        value: "false"
+      - key: TWILIO_ENABLED
+        value: "false"
+      - key: CALLMEBOT_ENABLED
+        value: "true"
+      - key: CALLMEBOT_TELEGRAM_USER
+        value: "@Albert_del_rey"
+      - key: CALLMEBOT_LANG
+        value: "es-US-Standard-A"
+      - key: CALLMEBOT_REPEAT
+        value: "2"
+      - key: CALLMEBOT_GLOBAL_COOLDOWN_SECONDS
+        value: "180"
+      - key: EXTREME_DISCOUNT_THRESHOLD
+        value: "70"
+      - key: STRONG_DEAL_THRESHOLD
+        value: "50"
+      - key: HISTORICAL_LOW_MIN_DROP
+        value: "50"
+      - key: HISTORY_WINDOW_DAYS
+        value: "60"
+      - key: HISTORY_RETENTION_DAYS
+        value: "60"
+      - key: PRICE_RECORD_MIN_INTERVAL_MINUTES
+        value: "60"
+      - key: ALERT_COOLDOWN_HOURS
+        value: "6"
+      - key: COLD_START_ABSURD_PRICE_CLP
+        value: "1000"
+      - key: INCLUDE_STORE_CARD_PRICES
+        value: "true"
+      - key: NOTIFY_ON_NO_DEALS
+        value: "true"
+      - key: LOG_LEVEL
+        value: "INFO"
+      - key: DATABASE_URL
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_CHAT_ID
+        sync: false
